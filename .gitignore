@@ -1,0 +1,11 @@
+dados/prata/*
+dados/ouro/*
+!dados/**/.gitkeep
+.venv/
+__pycache__/
+kaggle.json
+dados/bronze/**
+!dados/bronze/censo/
+!dados/bronze/enade/
+!dados/bronze/censo/ingestaoCenso.py
+!dados/bronze/enade/ingestaoENADE.py

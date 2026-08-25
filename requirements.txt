@@ -1,0 +1,4 @@
+requests
+tqdm
+py7zr
+urllib3
