@@ -13,6 +13,9 @@ PRATA       = Path("dados/prata")
 DATA_COLETA_PRF  = "2026-09-11"
 DATA_COLETA_DNIT = "2026-09-11"
 
+FONTE_PRF  = "https://www.gov.br/prf/pt-br/acesso-a-informacao/dados-abertos/dados-abertos-da-prf"
+FONTE_DNIT = "https://servicos.dnit.gov.br/dnitcloud/index.php/s/oTpPRmYs5AAdiNr?path=%2FSNV%20Planilhas%20(2011-Atual)%20(XLS)"
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def localizar_zips(pasta: Path) -> list[Path]:
@@ -26,20 +29,20 @@ def localizar_zips(pasta: Path) -> list[Path]:
 
 
 def extrair(zip_path: Path, destino: Path) -> list[Path]:
-    """Extrai um zip na pasta destino/<stem>/ e retorna os CSVs extraídos."""
+    """Extrai um zip na pasta destino/<stem>/ e retorna os arquivos extraídos."""
     pasta_saida = destino / zip_path.stem
     pasta_saida.mkdir(parents=True, exist_ok=True)
 
     with zipfile.ZipFile(zip_path, "r") as z:
         z.extractall(pasta_saida)
 
-    csvs = list(pasta_saida.glob("**/*.csv"))
-    print(f"  ✔ {zip_path.name} → {pasta_saida} ({len(csvs)} CSV(s))")
-    return csvs
+    arquivos = list(pasta_saida.glob("**/*.csv")) + list(pasta_saida.glob("**/*.xls")) + list(pasta_saida.glob("**/*.xlsx"))
+    print(f"  ✔ {zip_path.name} → {pasta_saida} ({len(arquivos)} arquivo(s))")
+    return arquivos
 
-
-def registrar_proveniencia(fonte: Path, csvs: list[Path], destino: Path, data_coleta: str):
+def registrar_proveniencia(fonte: Path, csvs: list[Path], destino: Path, data_coleta: str, url_fonte: str):
     info = {
+        "url_fonte": url_fonte,
         "fonte": str(fonte),
         "arquivos_extraidos": [str(c) for c in csvs],
         "baixado_em": data_coleta,
@@ -67,7 +70,7 @@ def promover_prata(csvs: list[Path], origem_label: str):
 
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 
-def ingerir_fonte(bronze_pasta: Path, label: str, data_coleta: str, promover: bool = False):
+def ingerir_fonte(bronze_pasta: Path, label: str, data_coleta: str, url_fonte: str, promover: bool = False):
     print(f"\n{'='*50}")
     print(f" Ingerindo: {label}")
     print(f"{'='*50}")
@@ -77,7 +80,7 @@ def ingerir_fonte(bronze_pasta: Path, label: str, data_coleta: str, promover: bo
 
     for zip_path in zips:
         csvs = extrair(zip_path, bronze_pasta)
-        registrar_proveniencia(zip_path, csvs, bronze_pasta, data_coleta)
+        registrar_proveniencia(zip_path, csvs, bronze_pasta, data_coleta, url_fonte)
         todos_csvs.extend(csvs)
 
     if promover:
@@ -89,8 +92,8 @@ def ingerir_fonte(bronze_pasta: Path, label: str, data_coleta: str, promover: bo
 
 
 def main():
-    ingerir_fonte(BRONZE_PRF,  label="PRF",  data_coleta=DATA_COLETA_PRF)
-    ingerir_fonte(BRONZE_DNIT, label="DNIT", data_coleta=DATA_COLETA_DNIT)
+    ingerir_fonte(BRONZE_PRF,  label="PRF",  data_coleta=DATA_COLETA_PRF,  url_fonte=FONTE_PRF)
+    ingerir_fonte(BRONZE_DNIT, label="DNIT", data_coleta=DATA_COLETA_DNIT, url_fonte=FONTE_DNIT)
 
 
 if __name__ == "__main__":
