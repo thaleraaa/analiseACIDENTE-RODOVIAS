@@ -13,3 +13,5 @@ dados/bronze/PRF/**
 dados/bronze/DNIT/**
 !dados/bronze/DNIT/**/
 !dados/bronze/DNIT/**/*.zip
+
+!dados/prata/proveniencia.jsonl
