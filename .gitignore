@@ -5,4 +5,4 @@ dados/ouro/*
 __pycache__/
 kaggle.json
 dados/bronze/**
-!dados/bronze/.gitkeep
+!dados/bronze/**/*.zip
