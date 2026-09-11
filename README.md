@@ -34,11 +34,11 @@
 
 ### PRF
 - Fundir todos os `datatran<ano>.csv` em um único `prf.parquet` na prata.
-- Anos disponíveis: 2015 a 2025.
+- Anos disponíveis: 2017 a 2025.
 
 ### DNIT
 - Fundir todos os `SNV_<versão>.xls` em um único `dnit.parquet` na prata.
-- Versões disponíveis: 2015 a 2025.
+- Versões disponíveis: 2017 a 2025.
 - Cada versão representa um snapshot da malha rodoviária, adicionar coluna 
 
 ## Decisões de tratamento
@@ -50,12 +50,12 @@
 - `feridos` confirmado como soma exata de `feridos_leves` + `feridos_graves` (0 divergências em 851.191 registros), descartado.
 - `regional`, `municipio`, `latitude`, `longitude`, `delegacia`, `uop` descartadas por não serem necessárias para a análise.
 - 11 linhas removidas por ausente em `classificacao_acidente`.
-- Anos fundidos: 2015 a 2025. Total: 851.180 linhas.
+- Anos fundidos: 2017 a 2025. Total: 851.180 linhas.
 
 ### DNIT
 - Espaços removidos de nomes de coluna e texto.
 - Filtrado apenas trechos com `Jurisdição == Federal`: 262.668 → 134.376 linhas.
 - `km inicial` e `km final` convertidos para float (vírgula → ponto).
 - `Jurisdição`, `Extensão`, `Obras`, `Federal Coincidente`, `Ato legal`, `Unidade Local`, `Estadual Coincidente`, `Superfície Est. Coincidente`, `Superfície Federal` descartadas.
-- Versões fundidas: 2016 a 2025. Total: 134.376 linhas.
+- Versões fundidas: 2017 a 2025. Total: 134.376 linhas.
 - Coluna `versao_snv` adicionada para rastrear a origem de cada linha.
