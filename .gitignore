@@ -4,5 +4,12 @@ dados/ouro/*
 .venv/
 __pycache__/
 kaggle.json
-dados/bronze/**
-!dados/bronze/**/*.zip
+
+# Ignora os dados do PRF e do DNIT, exceto arquivos ZIP.
+dados/bronze/PRF/**
+!dados/bronze/PRF/**/
+!dados/bronze/PRF/**/*.zip
+
+dados/bronze/DNIT/**
+!dados/bronze/DNIT/**/
+!dados/bronze/DNIT/**/*.zip
