@@ -18,7 +18,7 @@
 
 - `Ato legal` tem 99,9% de valores ausentes e o único valor presente é `Decisão Judicial` (constante), descartar na prata.
 - `Obras` tem 98,0% de valores ausentes, convertida para flag booleana `em_obras` (True = trecho com intervenção ativa); ausente interpretado como sem obra, confirmado pelo manual SNV DNIT seção 3.5.
-- `Jurisdição` será usada como filtro na prata para manter apenas trechos Federal, Concessão Federal e Convênio de
+- `Jurisdição` será usada como filtro na prata para manter apenas trechos Federal, Concessão Federal e Convênio de Administração, descartada após o filtro.
 - `Estadual Coincidente` e `Superfície Est. Coincidente` têm ~79% de ausentes e só fazem sentido para trechos estaduais coincidentes, descartar junto com o filtro federal.
 - `Unidade Local` tem 30,9% de ausentes, descartada pois a análise usará apenas o cruzamento por `BR` e `UF` com a PRF.
 - `Extensão` descartada pois é derivada de `km final` - `km inicial`.
@@ -36,11 +36,16 @@
 ### PRF
 - Espaços removidos de nomes de coluna e texto.
 - `km` convertido para float (vírgula → ponto).
-- `horario` convertido para time.
+- `horario` convertido para a coluna numérica `hora`; `horario` descartada após a extração.
 - `feridos` confirmado como soma exata de `feridos_leves` + `feridos_graves` (0 divergências em 851.191 registros), descartado.
+- `data_inversa` partida em `mes` e `dia`; `data_inversa` descartada após a partição (`ano` já existia extraído do nome do arquivo).
+- `periodo_dia` criado a partir de `hora`: Madrugada (0–6), Manhã (6–12), Tarde (12–18), Noite (18–24).
+- `pessoas` mantida apesar de 33.064 divergências em relação à soma das categorias de vítimas — critério de preenchimento pode variar entre anos.
 - `regional`, `municipio`, `latitude`, `longitude`, `delegacia`, `uop` descartadas por não serem necessárias para a análise.
+- `uso_solo`, `ignorados` e `fase_dia` descartados por não responderem à pergunta norteadora.
 - 11 linhas removidas por ausente em `classificacao_acidente`.
 - Anos fundidos: 2017 a 2025. Total: 851.180 linhas.
+
 
 ### DNIT
 - Espaços removidos de nomes de coluna e texto.
