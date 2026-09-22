@@ -1,4 +1,5 @@
 dados/prata/*
+!dados/prata/.gitkeep
 dados/ouro/*
 !dados/**/.gitkeep
 .venv/
@@ -16,4 +17,3 @@ dados/bronze/DNIT/**
 !dados/bronze/DNIT/**/
 !dados/bronze/DNIT/**/*.zip
 
-dados/prata/proveniencia.jsonl
