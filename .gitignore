@@ -5,6 +5,8 @@ dados/ouro/*
 __pycache__/
 kaggle.json
 
+src/test.py
+
 # Ignora os dados do PRF e do DNIT, exceto arquivos ZIP.
 dados/bronze/PRF/**
 !dados/bronze/PRF/**/

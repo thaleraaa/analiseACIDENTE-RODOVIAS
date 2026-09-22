@@ -17,8 +17,8 @@
 > Arquivo analisado: `SNV_202511A.xls` (versão novembro de 2025).
 
 - `Ato legal` tem 99,9% de valores ausentes e o único valor presente é `Decisão Judicial` (constante), descartar na prata.
-- `Obras` tem 98,0% de valores ausentes, descartar na prata.
-- `Jurisdição` será usada como filtro na prata para manter apenas trechos federais, descartada após o filtro.
+- `Obras` tem 98,0% de valores ausentes, convertida para flag booleana `em_obras` (True = trecho com intervenção ativa); ausente interpretado como sem obra, confirmado pelo manual SNV DNIT seção 3.5.
+- `Jurisdição` será usada como filtro na prata para manter apenas trechos Federal, Concessão Federal e Convênio de
 - `Estadual Coincidente` e `Superfície Est. Coincidente` têm ~79% de ausentes e só fazem sentido para trechos estaduais coincidentes, descartar junto com o filtro federal.
 - `Unidade Local` tem 30,9% de ausentes, descartada pois a análise usará apenas o cruzamento por `BR` e `UF` com a PRF.
 - `Extensão` descartada pois é derivada de `km final` - `km inicial`.
@@ -30,16 +30,6 @@
 - `Superfície Federal` e `Superfície` são altamente correlacionadas, como a análise se restringe a rodovias federais as duas coincidem, manter apenas `Superfície`.
 - `Código` é único por registro, candidato a chave primária.
 
-## Integração prevista
-
-### PRF
-- Fundir todos os `datatran<ano>.csv` em um único `prf.parquet` na prata.
-- Anos disponíveis: 2017 a 2025.
-
-### DNIT
-- Fundir todos os `SNV_<versão>.xls` em um único `dnit.parquet` na prata.
-- Versões disponíveis: 2017 a 2025.
-- Cada versão representa um snapshot da malha rodoviária, adicionar coluna 
 
 ## Decisões de tratamento
 
@@ -54,8 +44,9 @@
 
 ### DNIT
 - Espaços removidos de nomes de coluna e texto.
-- Filtrado apenas trechos com `Jurisdição == Federal`: 262.668 → 134.376 linhas.
+- Filtrado apenas trechos com `Jurisdição` em Federal, Concessão Federal ou Convênio de Administração: 262.668 → 134.376 linhas.
+- `obras` convertida para flag booleana `em_obras`, coluna `obras` descartada após a conversão.
+- `Jurisdição`, `Extensão`, `Federal Coincidente`, `Ato legal`, `Unidade Local`, `Estadual Coincidente`, `Superfície Est. Coincidente`, `Superfície Federal`, `local_de_inicio`, `local_de_fim`, `desc_coinc` descartadas.
 - `km inicial` e `km final` convertidos para float (vírgula → ponto).
-- `Jurisdição`, `Extensão`, `Obras`, `Federal Coincidente`, `Ato legal`, `Unidade Local`, `Estadual Coincidente`, `Superfície Est. Coincidente`, `Superfície Federal` descartadas.
 - Versões fundidas: 2017 a 2025. Total: 134.376 linhas.
 - Coluna `versao_snv` adicionada para rastrear a origem de cada linha.

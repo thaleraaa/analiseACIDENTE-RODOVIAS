@@ -1,114 +1,149 @@
 from pathlib import Path
 from datetime import datetime
 import json
+
 import pandas as pd
 
-# ── Caminhos ──────────────────────────────────────────────────────────────────
-BRONZE = Path("dados/bronze/DNIT")
-PRATA  = Path("dados/prata")
+import limpeza
 
-# ── Carregar e fundir ─────────────────────────────────────────────────────────
+
+BRONZE = Path("dados/bronze/DNIT")
+PRATA = Path("dados/prata")
+
 
 def carregar():
-    arquivos = sorted(BRONZE.glob("**/*.xls") )
+    arquivos = sorted(BRONZE.glob("**/*.xls"))
+
     if not arquivos:
-        raise FileNotFoundError(f"Nenhum XLS em {BRONZE}")
+        raise FileNotFoundError(f"Nenhum XLS encontrado em {BRONZE}")
 
     dfs = []
-    for arq in arquivos:
-        df = pd.read_excel(arq, header=2)
-        df["versao_snv"] = arq.stem
+
+    for arquivo in arquivos:
+        df = pd.read_excel(arquivo, header=2)
+        df["versao_snv"] = arquivo.stem
+        df = limpeza.normalizar_colunas(df)
+
         dfs.append(df)
-        print(f"  · {arq.name} ({len(df)} linhas)")
+        print(f"  · {arquivo.name} ({len(df)} linhas)")
 
     fundido = pd.concat(dfs, ignore_index=True)
     print(f"\nTotal fundido: {len(fundido)} linhas")
+
     return fundido, arquivos
 
 
-# ── Transformações ─────────────────────────────────────────────────────────────
-
-def tirar_espacos(df):
-    df.columns = [str(c).strip() for c in df.columns]
-    print(df.columns.tolist())  # << ver os nomes
-    print(df.dtypes)            # << ver os tipos
-    return df
-
-def filtrar_federal(df):
-    antes = len(df)
-    df = df[df["Jurisdição"] == "Federal"].copy()
-    print(f"Filtro federal: {antes} → {len(df)} linhas ({antes - len(df)} removidas)")
-    return df
-
-
 def converter_tipos(df):
-    for col in ["km inicial", "km final"]:
-        if df[col].dtype == object:
-            df[col] = df[col].astype(str).str.replace(",", ".", regex=False)
-        df[col] = pd.to_numeric(df[col], errors="coerce")
+    for coluna in ["km_inicial", "km_final"]:
+        if coluna not in df.columns:
+            continue
+
+        serie = (
+            df[coluna]
+            .astype("string")
+            .str.strip()
+            .str.replace(",", ".", regex=False)
+        )
+
+        df[coluna] = pd.to_numeric(serie, errors="coerce")
+
+    return df
+
+
+def flag_obras(df):
+    if "obras" in df.columns:
+        df["em_obras"] = df["obras"].notna().astype("boolean")
+        df = df.drop(columns=["obras"])
+
     return df
 
 
 def descartar_colunas(df):
     colunas = [
-        "Jurisdição", "Extensão", "Obras", "OBRAS",
-        "Federal Coincidente", "Ato legal",
-        "Unidade Local", "Estadual Coincidente",
-        "Superfície Est. Coincidente", "Superfície Federal",
+        "jurisdicao",
+        "extensao",
+        "federal_coincidente",
+        "ato_legal",
+        "unidade_local",
+        "estadual_coincidente",
+        "superficie_est_coincidente",
+        "superficie_federal",
+        "local_de_inicio",
+        "local_de_fim",
+        "desc_coinc",
     ]
-    df = df.drop(columns=[c for c in colunas if c in df.columns])
-    print(f"Colunas descartadas: {colunas}")
-    return df
 
+    return df.drop(
+        columns=[coluna for coluna in colunas if coluna in df.columns]
+    )
 
-# ── Salvar ────────────────────────────────────────────────────────────────────
 
 def salvar(df):
     PRATA.mkdir(parents=True, exist_ok=True)
+
     destino = PRATA / "dnit.parquet"
     df.to_parquet(destino, index=False)
+
     print(f"\nSalvo em: {destino} {df.shape}")
+    print(f"Colunas finais: {df.columns.tolist()}")
+
     return destino
 
 
-# ── Proveniência ──────────────────────────────────────────────────────────────
-
 def registrar(arquivos, destino, antes, depois, decisoes):
     info = {
-        "origens": [a.name for a in arquivos],
+        "origens": [arquivo.name for arquivo in arquivos],
         "arquivo_prata": destino.name,
         "linhas_antes": antes,
         "linhas_depois": depois,
         "decisoes": decisoes,
         "transformado_em": datetime.now().isoformat(timespec="seconds"),
     }
+
     caminho = PRATA / "proveniencia.jsonl"
-    with caminho.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(info, ensure_ascii=False) + "\n")
 
+    with caminho.open("a", encoding="utf-8") as arquivo:
+        arquivo.write(json.dumps(info, ensure_ascii=False) + "\n")
 
-# ── Pipeline ──────────────────────────────────────────────────────────────────
 
 def main():
-    print("="*50)
+    print("=" * 50)
     print(" Transformando: DNIT")
-    print("="*50)
+    print("=" * 50)
 
     df, arquivos = carregar()
     antes = len(df)
 
-    df = tirar_espacos(df)
-    df = filtrar_federal(df)
+    df = limpeza.tirar_espacos(df)
+    df = limpeza.filtrar_federal(df)
     df = converter_tipos(df)
+    df = flag_obras(df)
     df = descartar_colunas(df)
 
     destino = salvar(df)
-    registrar(arquivos, destino, antes, len(df), [
-        "espacos removidos de colunas e texto",
-        "filtrado apenas trechos com Jurisdicao Federal",
-        "km inicial e km final convertidos para float (virgula -> ponto)",
-        "Jurisdicao, Extensao, Obras, Federal Coincidente, Ato legal, Unidade Local, Estadual Coincidente, Superficie Est. Coincidente, Superficie Federal descartadas",
-    ])
+
+    registrar(
+        arquivos,
+        destino,
+        antes,
+        len(df),
+        [
+            "nomes das colunas normalizados para snake_case sem acentos ou simbolos",
+            "espacos externos removidos dos valores textuais",
+            "colunas duplicadas apos normalizacao removidas mantendo a primeira (obras aparecia como Obras e OBRAS)",
+            "filtrado apenas trechos com jurisdicao Federal, Concessao Federal ou Convenio de Administracao",
+            "km_inicial e km_final convertidos para float (virgula -> ponto)",
+            "obras convertida para flag booleana em_obras (True = trecho com intervencao ativa); "
+            "ausente = sem obra, confirmado pelo manual SNV DNIT secao 3.5 — "
+            "EOD: duplicacao, EOP: pavimentacao, EOI: implantacao",
+            "jurisdicao, extensao, federal_coincidente, ato_legal, unidade_local, "
+            "estadual_coincidente, superficie_est_coincidente, superficie_federal descartadas",
+            "local_de_inicio e local_de_fim descartados: join com PRF sera por br, uf e km, "
+            "descricao textual nao entra em nenhuma chave",
+            "desc_coinc descartada: nao relacionada a condicao de pista ou clima; "
+            "trechos coincidentes poderiam gerar duplicatas no join por br+uf+km",
+        ],
+    )
 
     print("\nDNIT concluído.")
 
