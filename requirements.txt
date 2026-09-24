@@ -1,6 +1,6 @@
 requests
 pandas
-fg-data-profiling
+ydata-profiling
 setuptools<82
 openpyxl
 xlrd

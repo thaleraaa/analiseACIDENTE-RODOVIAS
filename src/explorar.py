@@ -1,6 +1,6 @@
 from pathlib import Path
 import pandas as pd
-from data_profiling import ProfileReport
+from ydata_profiling import ProfileReport
 
 RELATORIOS = Path("relatorios")
 
