@@ -58,19 +58,9 @@ def registrar_proveniencia(fonte: Path, csvs: list[Path], destino: Path, data_co
 
     arquivo.write_text(json.dumps(historico, indent=2, ensure_ascii=False), encoding="utf-8")
 
-
-def promover_prata(csvs: list[Path], origem_label: str):
-    """Copia CSVs para prata/ com prefixo de origem para evitar colisão."""
-    PRATA.mkdir(parents=True, exist_ok=True)
-    for csv in csvs:
-        destino = PRATA / f"{origem_label}_{csv.name}"
-        shutil.copy(csv, destino)
-        print(f"  → prata: {destino.name}")
-
-
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 
-def ingerir_fonte(bronze_pasta: Path, label: str, data_coleta: str, url_fonte: str, promover: bool = False):
+def ingerir_fonte(bronze_pasta: Path, label: str, data_coleta: str, url_fonte: str):
     print(f"\n{'='*50}")
     print(f" Ingerindo: {label}")
     print(f"{'='*50}")
@@ -82,10 +72,6 @@ def ingerir_fonte(bronze_pasta: Path, label: str, data_coleta: str, url_fonte: s
         csvs = extrair(zip_path, bronze_pasta)
         registrar_proveniencia(zip_path, csvs, bronze_pasta, data_coleta, url_fonte)
         todos_csvs.extend(csvs)
-
-    if promover:
-        print(f"\n[prata] Promovendo {len(todos_csvs)} CSV(s)...")
-        promover_prata(todos_csvs, label)
 
     print(f"\n[{label}] Concluído — {len(todos_csvs)} CSV(s) extraídos no total.")
     return todos_csvs
