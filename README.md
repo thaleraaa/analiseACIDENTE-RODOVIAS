@@ -101,10 +101,104 @@ Para retomar a partir de uma etapa:
 python src\pipeline.py enriquecimento
 ```
 
-As etapas de `carga` e `modelagem` estão declaradas, mas ainda não possuem
-implementação e são informadas como puladas no log, conforme o conteúdo das
-próximas aulas.
+A etapa de `carga` está implementada e a etapa de `modelagem` executa o dbt.
 
 O pipeline registra as mensagens no terminal e em `pipeline.log`. O arquivo de
 log é ignorado pelo Git. Cada etapa informa início, fim, duração e registra o
 rastro completo quando ocorre uma falha.
+
+## Modelagem e carga no DuckDB
+
+O banco da camada Ouro é `dados/ouro/projeto.duckdb`. A carga usa DuckDB
+embutido, sem servidor, usuário ou senha, e lê os Parquets da Prata
+diretamente.
+
+O grão da fato é:
+
+> Uma linha de `ouro.fato_acidente` representa um acidente rodoviário
+> registrado pela PRF.
+
+O modelo possui:
+
+- `prata.prf`, `prata.dnit` e `prata.prf_enriquecido`: cópias das entradas
+  tratadas;
+- `ouro.fato_acidente`: uma linha por acidente, com `acidente_id`;
+- `ouro.dim_trecho`: uma linha por trecho/versionamento do DNIT;
+- `ouro.vw_acidente_completo`: view com a fato enriquecida pelo trecho;
+- `trecho_id`: chave derivada de `codigo` e `versao_snv`.
+
+A etapa confere duplicidades de `acidente_id` e fatos órfãos sem trecho. Ambos
+precisam ser zero. Acidentes sem correspondência no DNIT continuam na fato,
+com `trecho_id` nulo, preservando o `left join` da etapa de enriquecimento.
+
+## Transformação declarativa com dbt
+
+A criação das tabelas da Ouro foi migrada para o dbt. O Python continua
+responsável pela ingestão, transformação, enriquecimento e carga dos Parquets
+da Prata. O dbt fica responsável apenas pelos `SELECT`s que criam os modelos
+analíticos.
+
+O projeto dbt está em `analise_dbt/` e possui:
+
+- `models/sources.yml`: declara `prata.dnit` e
+  `prata.prf_enriquecido` como fontes;
+- `models/dim_trecho.sql`: cria a tabela `ouro.dim_trecho`;
+- `models/fato_acidente.sql`: cria a tabela `ouro.fato_acidente`;
+- `models/vw_acidente_completo.sql`: cria a view usando `ref()` nos dois
+  modelos anteriores.
+
+O perfil local do dbt deve estar em
+`C:\Users\SEU_USUARIO\.dbt\profiles.yml`, apontando para
+`dados/ouro/projeto.duckdb`. Esse arquivo fica fora do repositório porque
+contém configuração específica da máquina.
+
+Comandos de validação:
+
+```powershell
+.venv\Scripts\python -m pip install -r requirements.txt
+Push-Location analise_dbt
+..\.venv\Scripts\dbt.exe debug
+..\.venv\Scripts\dbt.exe run
+Pop-Location
+```
+
+Ou, pelo pipeline:
+
+```powershell
+python src\pipeline.py modelagem
+```
+
+O pipeline agora executa `carga → modelagem`. A etapa de modelagem chama
+`dbt run` com `check=True` e, depois, confirma que não há acidentes
+duplicados nem fatos órfãos.
+
+### Ideia de cada model
+
+`prata.prf_enriquecido` é o resultado achatado do enriquecimento feito em
+Python. Ele mantém os dados do acidente e as informações do trecho na mesma
+linha, sendo a entrada principal da modelagem.
+
+`dim_trecho.sql` cria `ouro.dim_trecho`. Essa dimensão guarda uma linha por
+trecho/versionamento do DNIT e seus atributos descritivos, como rodovia, faixa
+de quilometragem, superfície, administração e situação de obras. Esses dados
+ficam separados para não serem repetidos em todas as linhas de acidentes.
+
+`fato_acidente.sql` cria `ouro.fato_acidente`. Essa é a tabela central do
+modelo: cada linha representa um acidente da PRF e contém as medidas e
+características do acontecimento, como mortos, feridos, veículos, ano, tipo e
+local. A coluna `trecho_id` aponta para a dimensão quando houve
+correspondência com o DNIT.
+
+`vw_acidente_completo.sql` cria `ouro.vw_acidente_completo`. A view faz um
+`LEFT JOIN` entre a fato e a dimensão para oferecer uma consulta achatada,
+pronta para análises, sem duplicar fisicamente os atributos do trecho. Ela
+preserva também acidentes sem correspondência no DNIT.
+
+Assim, os três models têm responsabilidades diferentes:
+
+```text
+prf_enriquecido  → entrada achatada tratada
+dim_trecho       → descrição dos trechos
+fato_acidente    → acontecimentos e medidas dos acidentes
+vw_acidente_completo → consulta analítica reunindo fato e dimensão
+```

@@ -5,6 +5,9 @@ dados/ouro/*
 .venv/
 __pycache__/
 pipeline.log
+analise_dbt/target/
+analise_dbt/dbt_packages/
+analise_dbt/logs/
 kaggle.json
 
 src/test.py

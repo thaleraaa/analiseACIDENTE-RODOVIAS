@@ -1,7 +1,13 @@
 import logging
+from pathlib import Path
+import subprocess
 import sys
 import time
 
+import duckdb
+
+import carga
+from config import RAIZ
 import enriquecer_prf_dnit
 import ingerir
 import transformar_dnit
@@ -10,15 +16,6 @@ from config import configurar_log
 
 
 log = logging.getLogger(__name__)
-
-
-ETAPAS = [
-    ("ingestao", ingerir.main),
-    ("transformacao", lambda: (transformar_prf.main(), transformar_dnit.main())),
-    ("enriquecimento", enriquecer_prf_dnit.main),
-    ("carga", None),
-    ("modelagem", None),
-]
 
 
 def executar(nome, funcao):
@@ -31,6 +28,30 @@ def executar(nome, funcao):
         raise
     duracao = time.perf_counter() - comecou
     log.info("etapa %s: fim em %.1fs", nome, duracao)
+
+
+def etapa_carga():
+    carga.main()
+
+
+def etapa_modelagem():
+    executavel = Path(sys.executable).with_name("dbt.exe")
+    subprocess.run(
+        [str(executavel), "run"],
+        cwd=RAIZ / "analise_dbt",
+        check=True,
+    )
+    with duckdb.connect(str(carga.BANCO), read_only=True) as con:
+        carga.conferir(con)
+
+
+ETAPAS = [
+    ("ingestao", ingerir.main),
+    ("transformacao", lambda: (transformar_prf.main(), transformar_dnit.main())),
+    ("enriquecimento", enriquecer_prf_dnit.main),
+    ("carga", etapa_carga),
+    ("modelagem", etapa_modelagem),
+]
 
 
 def main(a_partir_de=None):
