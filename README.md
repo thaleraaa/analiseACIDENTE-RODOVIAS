@@ -44,14 +44,40 @@
 - `regional`, `municipio`, `latitude`, `longitude`, `delegacia`, `uop` descartadas por não serem necessárias para a análise.
 - `uso_solo`, `ignorados` e `fase_dia` descartados por não responderem à pergunta norteadora.
 - 11 linhas removidas por ausente em `classificacao_acidente`.
-- Anos fundidos: 2017 a 2025. Total: 851.180 linhas.
+- Anos fundidos: 2017 a 2025. Total: 632.657 linhas.
 
 
 ### DNIT
 - Espaços removidos de nomes de coluna e texto.
-- Filtrado apenas trechos com `Jurisdição` em Federal, Concessão Federal ou Convênio de Administração: 262.668 → 134.376 linhas.
+- Filtrado apenas trechos federais: `Federal`, `Concessão Federal`,
+  `Convênio de Administração` e os códigos históricos
+  `FEDERAL-PAV`, `FEDERAL-PLA` e `FEDERAL-N_PAV`.
 - `obras` convertida para flag booleana `em_obras`, coluna `obras` descartada após a conversão.
 - `Jurisdição`, `Extensão`, `Federal Coincidente`, `Ato legal`, `Unidade Local`, `Estadual Coincidente`, `Superfície Est. Coincidente`, `Superfície Federal`, `local_de_inicio`, `local_de_fim`, `desc_coinc` descartadas.
 - `km inicial` e `km final` convertidos para float (vírgula → ponto).
-- Versões fundidas: 2017 a 2025. Total: 134.376 linhas.
+- Versões fundidas: 2017 a 2025. Total: 200.773 linhas.
 - Coluna `versao_snv` adicionada para rastrear a origem de cada linha.
+
+## Enriquecimento PRF + DNIT
+
+O enriquecimento mantém a PRF como tabela principal, com uma linha por
+acidente. A tabela do DNIT possui uma linha por trecho, por isso a chave não é
+um valor único de quilômetro: o acidente casa quando `uf` e `br` são iguais e
+`km_inicial <= km <= km_final`.
+
+O script `src/enriquecer_prf_dnit.py` escolhe, para cada ano do acidente, a
+versão do DNIT mais recente disponível até aquele ano. Como há versões
+históricas desde 2017, os acidentes de 2017 a 2025 são comparados com a
+versão correspondente disponível no período. Caso algum ano não tenha versão
+anterior, o script usa a primeira versão disponível e registra essa limitação
+na proveniência.
+
+A junção é `left`, portanto nenhum acidente da PRF é removido. Quando mais de
+um trecho contém o mesmo quilômetro, é escolhido o trecho de menor intervalo,
+evitando duplicar o acidente. O resultado deve manter exatamente as 632.657
+linhas da PRF.
+
+
+O atributo derivado `distancia_inicio_trecho_km` também é criado após a
+junção. Ele representa a distância do acidente em relação ao início do trecho
+do DNIT.

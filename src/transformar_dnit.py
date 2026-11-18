@@ -12,7 +12,10 @@ PRATA = Path("dados/prata")
 
 
 def carregar():
-    arquivos = sorted(BRONZE.glob("**/*.xls"))
+    arquivos = sorted(
+        list(BRONZE.glob("**/*.xls"))
+        + list(BRONZE.glob("**/*.xlsx"))
+    )
 
     if not arquivos:
         raise FileNotFoundError(f"Nenhum XLS encontrado em {BRONZE}")

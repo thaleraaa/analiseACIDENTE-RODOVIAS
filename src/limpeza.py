@@ -39,7 +39,14 @@ def chave_texto(serie):
     s = s.str.encode("ascii", errors="ignore")
     return s.str.decode("utf-8")
 
-_JURISDICOES_FEDERAIS = {"federal", "concessao federal", "convenio de administracao"}
+_JURISDICOES_FEDERAIS = {
+    "federal",
+    "concessao federal",
+    "convenio de administracao",
+    "federal-pav",
+    "federal-pla",
+    "federal-n_pav",
+}
 def filtrar_federal(df):
     if "jurisdicao" not in df.columns:
         raise KeyError(
