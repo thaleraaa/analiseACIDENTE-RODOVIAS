@@ -1,14 +1,15 @@
-from pathlib import Path
 from datetime import datetime
 import json
+import logging
 
 import pandas as pd
 
+from config import BRONZE, PRATA
 import limpeza
 
 
-BRONZE = Path("dados/bronze/DNIT")
-PRATA = Path("dados/prata")
+log = logging.getLogger(__name__)
+BRONZE = BRONZE / "DNIT"
 
 
 def carregar():
@@ -28,10 +29,10 @@ def carregar():
         df = limpeza.normalizar_colunas(df)
 
         dfs.append(df)
-        print(f"  · {arquivo.name} ({len(df)} linhas)")
+        log.info("DNIT: %s (%s linhas)", arquivo.name, len(df))
 
     fundido = pd.concat(dfs, ignore_index=True)
-    print(f"\nTotal fundido: {len(fundido)} linhas")
+    log.info("DNIT: total fundido %s linhas", len(fundido))
 
     return fundido, arquivos
 
@@ -87,8 +88,8 @@ def salvar(df):
     destino = PRATA / "dnit.parquet"
     df.to_parquet(destino, index=False)
 
-    print(f"\nSalvo em: {destino} {df.shape}")
-    print(f"Colunas finais: {df.columns.tolist()}")
+    log.info("DNIT: salvo em %s com dimensao %s", destino, df.shape)
+    log.debug("DNIT: colunas finais: %s", df.columns.tolist())
 
     return destino
 
@@ -110,10 +111,6 @@ def registrar(arquivos, destino, antes, depois, decisoes):
 
 
 def main():
-    print("=" * 50)
-    print(" Transformando: DNIT")
-    print("=" * 50)
-
     df, arquivos = carregar()
     antes = len(df)
 
@@ -148,7 +145,7 @@ def main():
         ],
     )
 
-    print("\nDNIT concluído.")
+    log.info("DNIT: transformacao concluida")
 
 
 if __name__ == "__main__":

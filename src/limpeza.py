@@ -1,8 +1,12 @@
 """Funções de limpeza que servem a qualquer fonte."""
 import re
 import unicodedata
+import logging
 
 import pandas as pd
+
+
+log = logging.getLogger(__name__)
 
 
 def tirar_espacos(df):
@@ -27,7 +31,7 @@ def normalizar_colunas(df):
 
     if df.columns.duplicated().any():
         duplicadas = df.columns[df.columns.duplicated()].tolist()
-        print(f"Colunas duplicadas removidas: {duplicadas}")
+        log.warning("Colunas duplicadas removidas: %s", duplicadas)
         df = df.loc[:, ~df.columns.duplicated()].copy()
 
     return df
@@ -57,9 +61,11 @@ def filtrar_federal(df):
     antes = len(df)
     df = df.loc[chave_texto(df["jurisdicao"]).isin(_JURISDICOES_FEDERAIS)].copy()
 
-    print(
-        f"Filtro federal: {antes} → {len(df)} linhas "
-        f"({antes - len(df)} removidas)"
+    log.info(
+        "Filtro federal: %s -> %s linhas (%s removidas)",
+        antes,
+        len(df),
+        antes - len(df),
     )
 
     return df

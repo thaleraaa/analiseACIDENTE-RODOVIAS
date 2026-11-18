@@ -1,14 +1,15 @@
-from pathlib import Path
 from datetime import datetime
 import json
+import logging
 
 import pandas as pd
 
+from config import BRONZE, PRATA
 import limpeza
 
 
-BRONZE = Path("dados/bronze/PRF")
-PRATA  = Path("dados/prata")
+log = logging.getLogger(__name__)
+BRONZE = BRONZE / "PRF"
 
 
 def carregar():
@@ -21,10 +22,10 @@ def carregar():
         df = pd.read_csv(arq, encoding="latin-1", sep=";")
         df["ano"] = int(arq.stem.replace("datatran", ""))
         dfs.append(df)
-        print(f"  · {arq.name} ({len(df)} linhas)")
+        log.info("PRF: %s (%s linhas)", arq.name, len(df))
 
     fundido = pd.concat(dfs, ignore_index=True)
-    print(f"\nTotal fundido: {len(fundido)} linhas")
+    log.info("PRF: total fundido %s linhas", len(fundido))
     return fundido, arquivos
 
 
@@ -74,7 +75,7 @@ def conferir_redundancias(df):
         != valores["feridos"]
     ).sum()
 
-    print(f"Divergências feridos: {divergencias}")
+    log.info("PRF: divergencias em feridos: %s", divergencias)
     return df
 
 
@@ -93,14 +94,17 @@ def descartar_colunas(df):
         "uso_solo", "ignorados", "fase_dia",
     ]
     df = df.drop(columns=[c for c in colunas if c in df.columns])
-    print(f"Colunas descartadas: {colunas}")
+    log.info("PRF: colunas descartadas: %s", colunas)
     return df
 
 
 def tratar_ausentes(df):
     antes = len(df)
     df = df.dropna(subset=["classificacao_acidente"])
-    print(f"Ausentes em classificacao_acidente removidos: {antes - len(df)}")
+    log.info(
+        "PRF: ausentes em classificacao_acidente removidos: %s",
+        antes - len(df),
+    )
     return df
 
 
@@ -108,7 +112,7 @@ def salvar(df):
     PRATA.mkdir(parents=True, exist_ok=True)
     destino = PRATA / "prf.parquet"
     df.to_parquet(destino, index=False)
-    print(f"\nSalvo em: {destino} {df.shape}")
+    log.info("PRF: salvo em %s com dimensao %s", destino, df.shape)
     return destino
 
 
@@ -127,10 +131,6 @@ def registrar(arquivos, destino, antes, depois, decisoes):
 
 
 def main():
-    print("=" * 50)
-    print(" Transformando: PRF")
-    print("=" * 50)
-
     df, arquivos = carregar()
     antes = len(df)
 
@@ -170,7 +170,7 @@ def main():
         ],
     )
 
-    print("\nPRF concluído.")
+    log.info("PRF: transformacao concluida")
 
 
 if __name__ == "__main__":

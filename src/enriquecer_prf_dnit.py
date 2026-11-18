@@ -1,12 +1,14 @@
-from pathlib import Path
 import re
 from datetime import datetime
 import json
+import logging
 
 import pandas as pd
 
+from config import PRATA
 
-PRATA = Path("dados/prata")
+
+log = logging.getLogger(__name__)
 PRF_PATH = PRATA / "prf.parquet"
 DNIT_PATH = PRATA / "dnit.parquet"
 DESTINO = PRATA / "prf_enriquecido.parquet"
@@ -154,16 +156,14 @@ def completar_left_join(prf, encontrados, sem_correspondencia):
         and coluna not in {"_merge", "_tamanho_trecho"}
     ]
 
-    ids_sem_par = set(sem_correspondencia["_linha_prf"])
-    sem_par = prf.loc[prf["_linha_prf"].isin(ids_sem_par)].copy()
+    resultado = prf.copy()
+    encontrados_por_id = encontrados.set_index("_linha_prf")
     for coluna in colunas_dnit:
-        sem_par[coluna] = encontrados[coluna].iloc[:0].reindex(sem_par.index)
+        resultado[coluna] = encontrados_por_id[coluna].reindex(
+            resultado["_linha_prf"]
+        ).to_numpy()
 
-    resultado = pd.concat(
-        [encontrados.drop(columns=["_merge", "_tamanho_trecho"], errors="ignore"), sem_par],
-        ignore_index=True,
-    )
-    return resultado.sort_values("_linha_prf", kind="stable").reset_index(drop=True)
+    return resultado
 
 
 def registrar(antes, depois, sem_correspondencia, versoes):
@@ -207,13 +207,18 @@ def main():
     resultado.to_parquet(DESTINO, index=False)
     sem_correspondencia.to_parquet(SEM_CORRESPONDENCIA, index=False)
 
-    print(f"PRF antes       : {len(prf)}")
-    print(f"Resultado       : {len(resultado)}")
-    print(f"Sem correspond.: {len(sem_correspondencia)}")
-    print("Motivos:")
-    print(sem_correspondencia["motivo"].value_counts(dropna=False).to_string())
-    print(f"\nSalvo em: {DESTINO}")
-    print(f"Ausentes em: {SEM_CORRESPONDENCIA}")
+    log.info("Enriquecimento: PRF antes: %s", len(prf))
+    log.info("Enriquecimento: resultado: %s", len(resultado))
+    log.warning(
+        "Enriquecimento: sem correspondencia: %s",
+        len(sem_correspondencia),
+    )
+    log.info(
+        "Enriquecimento: motivos: %s",
+        sem_correspondencia["motivo"].value_counts(dropna=False).to_dict(),
+    )
+    log.info("Enriquecimento: salvo em %s", DESTINO)
+    log.info("Enriquecimento: ausentes em %s", SEM_CORRESPONDENCIA)
 
     registrar(
         len(prf),

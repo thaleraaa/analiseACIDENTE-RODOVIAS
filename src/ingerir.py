@@ -2,12 +2,17 @@ from pathlib import Path
 import zipfile
 import json
 import shutil
+import logging
 from datetime import datetime
 
+from config import BRONZE, PRATA
+
+
+log = logging.getLogger(__name__)
+
 # ── Caminhos ──────────────────────────────────────────────────────────────────
-BRONZE_PRF  = Path("dados/bronze/PRF")
-BRONZE_DNIT = Path("dados/bronze/DNIT")
-PRATA       = Path("dados/prata")
+BRONZE_PRF = BRONZE / "PRF"
+BRONZE_DNIT = BRONZE / "DNIT"
 
 # ── Data de coleta manual ─────────────────────────────────────────────────────
 DATA_COLETA_PRF  = "2026-09-11"
@@ -22,9 +27,9 @@ def localizar_zips(pasta: Path) -> list[Path]:
     zips = sorted(pasta.glob("*.zip"))
     if not zips:
         raise FileNotFoundError(f"Nenhum .zip encontrado em {pasta}")
-    print(f"[{pasta.name}] {len(zips)} arquivo(s) encontrado(s):")
+    log.info("%s: %s arquivo(s) encontrado(s)", pasta.name, len(zips))
     for z in zips:
-        print(f"  · {z.name}")
+        log.debug("%s: arquivo %s", pasta.name, z.name)
     return zips
 
 
@@ -37,7 +42,13 @@ def extrair(zip_path: Path, destino: Path) -> list[Path]:
         z.extractall(pasta_saida)
 
     arquivos = list(pasta_saida.glob("**/*.csv")) + list(pasta_saida.glob("**/*.xls")) + list(pasta_saida.glob("**/*.xlsx"))
-    print(f"  ✔ {zip_path.name} → {pasta_saida} ({len(arquivos)} arquivo(s))")
+    log.info(
+        "%s: %s extraido para %s (%s arquivo(s))",
+        destino.name,
+        zip_path.name,
+        pasta_saida,
+        len(arquivos),
+    )
     return arquivos
 
 def registrar_proveniencia(fonte: Path, csvs: list[Path], destino: Path, data_coleta: str, url_fonte: str):
@@ -61,9 +72,7 @@ def registrar_proveniencia(fonte: Path, csvs: list[Path], destino: Path, data_co
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 
 def ingerir_fonte(bronze_pasta: Path, label: str, data_coleta: str, url_fonte: str):
-    print(f"\n{'='*50}")
-    print(f" Ingerindo: {label}")
-    print(f"{'='*50}")
+    log.info("Ingestao: iniciando %s", label)
 
     zips = localizar_zips(bronze_pasta)
     todos_csvs: list[Path] = []
@@ -73,7 +82,11 @@ def ingerir_fonte(bronze_pasta: Path, label: str, data_coleta: str, url_fonte: s
         registrar_proveniencia(zip_path, csvs, bronze_pasta, data_coleta, url_fonte)
         todos_csvs.extend(csvs)
 
-    print(f"\n[{label}] Concluído — {len(todos_csvs)} CSV(s) extraídos no total.")
+    log.info(
+        "Ingestao: %s concluida com %s arquivo(s) extraido(s)",
+        label,
+        len(todos_csvs),
+    )
     return todos_csvs
 
 

@@ -81,3 +81,30 @@ linhas da PRF.
 O atributo derivado `distancia_inicio_trecho_km` também é criado após a
 junção. Ele representa a distância do acidente em relação ao início do trecho
 do DNIT.
+
+## Pipeline
+
+O projeto possui um ponto de entrada único em `src/pipeline.py`. Os caminhos
+das camadas ficam centralizados em `src/config.py`, calculados a partir da
+raiz do projeto, para que os scripts não dependam da pasta de onde o comando
+foi executado.
+
+Para executar todas as etapas disponíveis:
+
+```powershell
+python src\pipeline.py
+```
+
+Para retomar a partir de uma etapa:
+
+```powershell
+python src\pipeline.py enriquecimento
+```
+
+As etapas de `carga` e `modelagem` estão declaradas, mas ainda não possuem
+implementação e são informadas como puladas no log, conforme o conteúdo das
+próximas aulas.
+
+O pipeline registra as mensagens no terminal e em `pipeline.log`. O arquivo de
+log é ignorado pelo Git. Cada etapa informa início, fim, duração e registra o
+rastro completo quando ocorre uma falha.

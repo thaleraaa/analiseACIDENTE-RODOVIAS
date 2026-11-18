@@ -4,6 +4,7 @@ dados/ouro/*
 !dados/**/.gitkeep
 .venv/
 __pycache__/
+pipeline.log
 kaggle.json
 
 src/test.py
