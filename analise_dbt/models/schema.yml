@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: dim_trecho
+    description: >
+      Dimensao descritiva dos trechos rodoviarios do DNIT. O grão e um trecho
+      em uma versao especifica do SNV.
+    columns:
+      - name: trecho_id
+        description: Chave derivada do codigo do trecho e da versao do SNV.
+        data_tests:
+          - not_null
+          - unique
+      - name: codigo
+        description: Codigo do trecho conforme o cadastro do DNIT.
+      - name: uf
+        description: Unidade federativa do trecho.
+      - name: br
+        description: Numero da rodovia federal.
+      - name: km_inicial
+        description: Quilometro inicial do trecho.
+      - name: km_final
+        description: Quilometro final do trecho.
+      - name: tipo_de_trecho
+        description: Classificacao do trecho no cadastro do DNIT.
+      - name: administracao
+        description: Responsavel pela administracao do trecho.
+      - name: superficie
+        description: Tipo de superficie do trecho.
+      - name: em_obras
+        description: Indica se o cadastro informa obra ativa no trecho.
+      - name: versao_snv
+        description: Versao do Sistema Nacional de Viacao usada como referencia.
+
+  - name: fato_acidente
+    description: >
+      Fato de acidentes rodoviarios registrados pela PRF. O grao e uma linha
+      por acidente.
+    columns:
+      - name: acidente_id
+        description: Identificador do registro de acidente da PRF.
+        data_tests:
+          - not_null
+          - unique
+      - name: trecho_id
+        description: Referencia ao trecho do DNIT; nula quando nao houve correspondencia.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_trecho')
+                field: trecho_id
+      - name: ano
+        description: Ano do acidente.
+      - name: tipo_acidente
+        description: Natureza do acidente registrado.
+      - name: classificacao_acidente
+        description: Gravidade/classificacao atribuida pela PRF.
+      - name: mortos
+        description: Numero de pessoas mortas no acidente.
+      - name: feridos_leves
+        description: Numero de feridos leves.
+      - name: feridos_graves
+        description: Numero de feridos graves.
+
+  - name: vw_acidente_completo
+    description: >
+      Visao de consulta que combina cada acidente com os atributos do trecho
+      correspondente e preserva acidentes sem trecho associado.

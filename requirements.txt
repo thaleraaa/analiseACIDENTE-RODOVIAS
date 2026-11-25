@@ -8,3 +8,5 @@ pyarrow
 duckdb
 dbt-core
 dbt-duckdb
+streamlit
+altair

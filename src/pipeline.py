@@ -41,6 +41,11 @@ def etapa_modelagem():
         cwd=RAIZ / "analise_dbt",
         check=True,
     )
+    subprocess.run(
+        [str(executavel), "test"],
+        cwd=RAIZ / "analise_dbt",
+        check=True,
+    )
     with duckdb.connect(str(carga.BANCO), read_only=True) as con:
         carga.conferir(con)
 

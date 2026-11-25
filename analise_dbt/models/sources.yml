@@ -3,6 +3,9 @@ version: 2
 sources:
   - name: prata
     schema: prata
+    description: Tabelas tratadas e enriquecidas pela etapa Python do pipeline.
     tables:
       - name: dnit
+        description: Trechos rodoviarios federais tratados, com uma linha por trecho e versao do SNV.
       - name: prf_enriquecido
+        description: Acidentes da PRF enriquecidos com atributos do trecho correspondente, quando encontrado.

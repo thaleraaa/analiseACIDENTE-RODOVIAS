@@ -8,6 +8,7 @@ pipeline.log
 analise_dbt/target/
 analise_dbt/dbt_packages/
 analise_dbt/logs/
+dashboard/.streamlit/secrets.toml
 kaggle.json
 
 src/test.py

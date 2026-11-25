@@ -202,3 +202,63 @@ dim_trecho       → descrição dos trechos
 fato_acidente    → acontecimentos e medidas dos acidentes
 vw_acidente_completo → consulta analítica reunindo fato e dimensão
 ```
+
+## Testes, documentação e dashboard
+
+Os testes de dados ficam junto dos models dbt:
+
+- `analise_dbt/models/schema.yml` documenta modelos e colunas e declara
+  `not_null`, `unique` e `relationships`;
+- `analise_dbt/tests/acidente_no_intervalo_do_trecho.sql` verifica que o km
+  de cada acidente associado está dentro do intervalo do trecho do DNIT.
+
+Os testes rodam automaticamente depois de `dbt run` na etapa `modelagem` do
+pipeline. Também podem ser executados manualmente:
+
+```powershell
+Push-Location analise_dbt
+..\.venv\Scripts\dbt.exe test
+..\.venv\Scripts\dbt.exe docs generate
+..\.venv\Scripts\dbt.exe docs serve
+Pop-Location
+```
+
+O dashboard é um consumidor separado do pipeline, feito com Streamlit. Ele lê
+`ouro.vw_acidente_completo` em modo somente leitura e permite explorar o clima
+em conjunto com características da via: traçado, tipo de pista, superfície,
+administração, obras, tipo de trecho e UF. Também há filtros por tipo e
+classificação do acidente, causa, período do dia, dia da semana e mês.
+
+O painel apresenta:
+
+- comparação cruzada de ocorrências por condição meteorológica e característica
+  selecionada da via;
+- mortes, feridos e acidentes com mortes por combinação;
+- evolução anual dos acidentes e das mortes;
+- filtros de período e categorias, incluindo registros sem informação;
+- cobertura de correspondência com trechos do DNIT.
+
+Os indicadores descrevem associações nos registros, não demonstram
+causalidade nem risco por viagem. Para estimar risco seriam necessários dados
+de exposição, como fluxo de veículos ou quilômetros percorridos em cada
+condição. Os atributos do DNIT ficam sem informação para acidentes sem trecho
+correspondente, que podem ser inspecionados separadamente pelos filtros.
+Nas abas "Via x clima" e "Gravidade", é possível alternar entre mapa de calor,
+barras horizontais e pizza. Mapa de calor e barras oferecem escala linear ou
+logarítmica. Na aba "Gravidade", a pizza representa a participação dos
+acidentes com morte por categoria, não a taxa de mortes. As pizzas mostram as
+oito categorias mais frequentes e agrupam o restante em "Outras". Os gráficos
+são renderizados com Altair pelo Streamlit; Matplotlib não é necessário.
+Quando a dimensão selecionada é "Traçado da via", o painel exibe apenas Reta,
+Curva, Aclive, Declive e Interseção de Vias. Valores combinados, como
+"Reta;Declive", ficam fora desses gráficos e da tabela cruzada.
+
+Para iniciar:
+
+```powershell
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python -m streamlit run dashboard\painel.py
+```
+
+Execute o pipeline antes para criar/atualizar o banco DuckDB. O painel não
+altera nem cria tabelas.
