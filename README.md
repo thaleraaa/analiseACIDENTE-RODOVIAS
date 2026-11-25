@@ -82,6 +82,21 @@ O atributo derivado `distancia_inicio_trecho_km` também é criado após a
 junção. Ele representa a distância do acidente em relação ao início do trecho
 do DNIT.
 
+## Ambiente Python
+
+Na raiz do projeto, crie o ambiente virtual uma vez, ative-o e instale as
+dependências:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+O prompt do PowerShell deve passar a mostrar `(.venv)`. Execute os comandos
+Python e dbt deste README nesse terminal ativado. Em um novo terminal, ative o
+ambiente novamente com `.\.venv\Scripts\Activate.ps1`.
+
 ## Pipeline
 
 O projeto possui um ponto de entrada único em `src/pipeline.py`. Os caminhos
@@ -92,13 +107,13 @@ foi executado.
 Para executar todas as etapas disponíveis:
 
 ```powershell
-python src\pipeline.py
+python .\src\pipeline.py
 ```
 
 Para retomar a partir de uma etapa:
 
 ```powershell
-python src\pipeline.py enriquecimento
+python .\src\pipeline.py enriquecimento
 ```
 
 A etapa de `carga` está implementada e a etapa de `modelagem` executa o dbt.
@@ -147,25 +162,23 @@ O projeto dbt está em `analise_dbt/` e possui:
 - `models/vw_acidente_completo.sql`: cria a view usando `ref()` nos dois
   modelos anteriores.
 
-O perfil local do dbt deve estar em
-`C:\Users\SEU_USUARIO\.dbt\profiles.yml`, apontando para
-`dados/ouro/projeto.duckdb`. Esse arquivo fica fora do repositório porque
-contém configuração específica da máquina.
+O perfil do dbt fica em `analise_dbt/profiles.yml` e aponta para
+`dados/ouro/projeto.duckdb` por um caminho relativo, sem depender de um perfil
+na pasta pessoal do usuário.
 
 Comandos de validação:
 
 ```powershell
-.venv\Scripts\python -m pip install -r requirements.txt
 Push-Location analise_dbt
-..\.venv\Scripts\dbt.exe debug
-..\.venv\Scripts\dbt.exe run
+dbt debug --profiles-dir .
+dbt run --profiles-dir .
 Pop-Location
 ```
 
 Ou, pelo pipeline:
 
 ```powershell
-python src\pipeline.py modelagem
+python .\src\pipeline.py modelagem
 ```
 
 O pipeline agora executa `carga → modelagem`. A etapa de modelagem chama
@@ -217,9 +230,9 @@ pipeline. Também podem ser executados manualmente:
 
 ```powershell
 Push-Location analise_dbt
-..\.venv\Scripts\dbt.exe test
-..\.venv\Scripts\dbt.exe docs generate
-..\.venv\Scripts\dbt.exe docs serve
+dbt test --profiles-dir .
+dbt docs generate --profiles-dir .
+dbt docs serve --profiles-dir .
 Pop-Location
 ```
 
@@ -256,8 +269,7 @@ Curva, Aclive, Declive e Interseção de Vias. Valores combinados, como
 Para iniciar:
 
 ```powershell
-.venv\Scripts\python -m pip install -r requirements.txt
-.venv\Scripts\python -m streamlit run dashboard\painel.py
+python -m streamlit run .\dashboard\painel.py
 ```
 
 Execute o pipeline antes para criar/atualizar o banco DuckDB. O painel não

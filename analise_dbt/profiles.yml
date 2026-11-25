@@ -1,0 +1,8 @@
+analise_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../dados/ouro/projeto.duckdb
+      schema: ouro
+      threads: 1

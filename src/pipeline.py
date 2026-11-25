@@ -37,12 +37,22 @@ def etapa_carga():
 def etapa_modelagem():
     executavel = Path(sys.executable).with_name("dbt.exe")
     subprocess.run(
-        [str(executavel), "run"],
+        [
+            str(executavel),
+            "run",
+            "--profiles-dir",
+            ".",
+        ],
         cwd=RAIZ / "analise_dbt",
         check=True,
     )
     subprocess.run(
-        [str(executavel), "test"],
+        [
+            str(executavel),
+            "test",
+            "--profiles-dir",
+            ".",
+        ],
         cwd=RAIZ / "analise_dbt",
         check=True,
     )
