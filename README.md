@@ -1,5 +1,26 @@
 # analiseACIDENTE-RODOVIAS
 
+## Começar aqui (Windows / PowerShell)
+
+Abra o PowerShell na pasta do projeto. Para configurar pela primeira vez e
+executar o processamento completo:
+
+```powershell
+# Criar o ambiente virtual (pule se a pasta .venv já existir)
+py -m venv .venv
+
+# Instalar as dependências (na primeira vez ou quando requirements.txt mudar)
+.\.venv\Scripts\python.exe -m pip install -r .\requirements.txt
+
+# Processar tudo: ingestão, transformação, enriquecimento, carga e dbt/testes
+.\.venv\Scripts\python.exe .\src\pipeline.py
+
+# Abrir o painel depois que o pipeline terminar com sucesso
+.\.venv\Scripts\python.exe -m streamlit run .\dashboard\painel.py
+```
+
+Para apenas abrir um banco já processado, pule direto para o comando do Streamlit. Para encerrar o painel, pressione `Ctrl+C` no terminal.
+
 ### PRF (dados abertos gov.br)
 > Arquivo analisado: `datatran2025.csv` (ano de 2025).
 
